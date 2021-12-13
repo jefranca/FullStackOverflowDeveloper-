@@ -31,6 +31,26 @@ app.post(
       if (!result) throw new InvalidQuestion("Invalid Question");
       res.send(result.rows);
     } catch (error) {
+      if (error instanceof InvalidQuestion)
+        return res.status(401).send(error.message);
+      next(error);
+    }
+  }
+);
+app.post(
+  "questions/:id",
+  validateToken,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { userId } = res.locals;
+      const { answer } = req.body;
+      await connection.query(
+        "UPDATE questions SET answered=$1, answeredAt=$2,answeredBy=$3,answered=$4",
+        [true,new Date(),userId,answer]
+      );
+      res.sendStatus(201)
+    } catch (error) {
       next(error);
     }
   }
