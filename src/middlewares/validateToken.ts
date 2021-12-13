@@ -10,11 +10,12 @@ export default async function validateToken(
   const token = req.headers.authorization?.split("Bearer ")[1];
   try {
     const userId = await connection.query(
-      `SELECT "userId" FROM sessions WHERE token=$1`,
+      `SELECT "user_id" FROM sessions WHERE token=$1`,
       [token]
     );
-    if (!userId) throw new InvalidToken("Invalid Token");
-    res.locals.userId = userId;
+    if (!userId.rowCount) throw new InvalidToken("Invalid Token");
+    console.log(userId.rows[0].user_id)
+    res.locals.userId = userId.rows[0].user_id;
     next();
   } catch (error) {
     if (error instanceof InvalidToken) return res.status(401).send(error.message);
