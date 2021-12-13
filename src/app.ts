@@ -38,7 +38,7 @@ app.post(
   }
 );
 app.post(
-  "questions/:id",
+  "/questions/:id",
   validateToken,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -47,9 +47,24 @@ app.post(
       const { answer } = req.body;
       await connection.query(
         "UPDATE questions SET answered=$1, answeredAt=$2,answeredBy=$3,answered=$4",
-        [true,new Date(),userId,answer]
+        [true, new Date(), userId, answer]
       );
-      res.sendStatus(201)
+      res.sendStatus(201);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+app.get(
+  "/questions",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const questions = await connection.query(
+        `SELECT questions.id, questions.question, users.student, users.class, question,submit_at 
+        FROM  questions JOIN users ON questions.user_id = users.id WHERE answered=$1`,
+        [false]
+      );
+      res.send(questions.rows);
     } catch (error) {
       next(error);
     }
