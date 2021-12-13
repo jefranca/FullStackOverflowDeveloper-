@@ -5,6 +5,7 @@ import { Request, Response, NextFunction } from "express";
 import validateToken from "./middlewares/validateToken";
 import connection from "./database";
 import InvalidQuestion from "./errors/InvalidQuestion";
+import { v4 as uuid } from 'uuid';
 
 const app = express();
 app.use(express.json());
@@ -46,7 +47,7 @@ app.post(
       const { userId } = res.locals;
       const { answer } = req.body;
       await connection.query(
-        "UPDATE questions SET answered=$1, answeredAt=$2,answeredBy=$3,answered=$4",
+        "UPDATE questions SET answered=$1, answered_at=$2,answered_by=$3,answer=$4",
         [true, new Date(), userId, answer]
       );
       res.sendStatus(201);
@@ -70,6 +71,23 @@ app.get(
     }
   }
 );
+app.post("/users", async (req:Request, res:Response, next: NextFunction)=>{
+  interface newUser {
+    name: string;
+    class: string;
+  }
+  try {
+    const newUser:newUser = req.body;
+    const userId=await connection.query(`INSERT INTO users (student,class) VALUES ($1,$2) RETURNING id`,[newUser.name, newUser.class])
+    const id=userId.rows[0].id;
+    console.log(userId.rows)
+    const token = uuid();
+    await connection.query(`INSERT INTO sessions (user_id,token) VALUES ($1,$2)`,[id,token])
+    res.sendStatus(201);
+  } catch (error) {
+    next(error);
+  }
+})
 
 app.use(errorHandler);
 
